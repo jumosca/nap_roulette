@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nap Roulette</string>
+    <string name="timer_notification_channel">Nap Timer</string>
+    <string name="alarm_notification_channel">Nap Alarm</string>
+    <string name="notification_timer_title">Nap in progress</string>
+    <string name="notification_timer_text">Time remaining: %1$s</string>
+    <string name="notification_alarm_title">Wake up!</string>
+    <string name="notification_alarm_text">Your nap is over!</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_snooze">Snooze 5 min</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_spin">SPIN</string>
+    <string name="action_stop">STOP</string>
+    <string name="range_min_label">Min</string>
+    <string name="range_max_label">Max</string>
+    <string name="sound_label">Alarm Sound</string>
+    <string name="stats_title">Nap Stats</string>
+</resources>

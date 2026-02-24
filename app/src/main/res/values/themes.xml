@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.NapRoulette" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#FFF2EFE7</item>
+        <item name="android:navigationBarColor">#FFF2EFE7</item>
+        <item name="android:windowBackground">#FFF2EFE7</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
