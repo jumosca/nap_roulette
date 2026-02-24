@@ -101,39 +101,49 @@ fun NapScreen(viewModel: NapViewModel) {
                 .padding(top = 48.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Header (only when idle)
+            AnimatedVisibility(
+                visible = timerState == TimerState.IDLE,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
             ) {
-                Text(
-                    text = "NAP ROULETTE",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        letterSpacing = 3.sp
-                    )
-                )
-                IconButton(onClick = { viewModel.toggleStats() }) {
-                    Icon(
-                        imageVector = Icons.Default.BarChart,
-                        contentDescription = "Stats",
-                        tint = InkMedium
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "NAP ROULETTE",
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                letterSpacing = 3.sp
+                            )
+                        )
+                        IconButton(onClick = { viewModel.toggleStats() }) {
+                            Icon(
+                                imageVector = Icons.Default.BarChart,
+                                contentDescription = "Stats",
+                                tint = InkMedium
+                            )
+                        }
+                    }
+
+                    // Ink divider
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        thickness = 1.dp,
+                        color = InkBlack.copy(alpha = 0.3f)
                     )
                 }
             }
 
-            // Ink divider
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                thickness = 1.dp,
-                color = InkBlack.copy(alpha = 0.3f)
-            )
+            Spacer(modifier = Modifier.height(
+                if (timerState == TimerState.IDLE) 16.dp else 80.dp
+            ))
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Roulette / Action buttons (top)
+            // Roulette / Spin button
             when (timerState) {
                 TimerState.IDLE -> {
                     SpinButton(
@@ -147,23 +157,7 @@ fun NapScreen(viewModel: NapViewModel) {
                 TimerState.SPINNING -> {
                     SpinButton(isSpinning = true, onClick = {})
                 }
-                TimerState.COUNTING_DOWN -> {
-                    IconButton(
-                        onClick = { viewModel.stop() },
-                        modifier = Modifier
-                            .size(72.dp)
-                            .border(2.dp, CinnabarRed, RoundedCornerShape(50))
-                            .background(CinnabarRedFaint, RoundedCornerShape(50))
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Stop,
-                            contentDescription = "Stop",
-                            tint = CinnabarRed,
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-                }
-                TimerState.ALARM_FIRING -> {}
+                else -> {}
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -190,6 +184,31 @@ fun NapScreen(viewModel: NapViewModel) {
                         TimerDisplay(remainingMillis = remainingMillis)
                     }
                     TimerState.ALARM_FIRING -> { /* handled above */ }
+                }
+            }
+
+            // Stop button (below timer during countdown)
+            AnimatedVisibility(
+                visible = timerState == TimerState.COUNTING_DOWN,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    IconButton(
+                        onClick = { viewModel.stop() },
+                        modifier = Modifier
+                            .size(72.dp)
+                            .border(2.dp, CinnabarRed, RoundedCornerShape(50))
+                            .background(CinnabarRedFaint, RoundedCornerShape(50))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Stop,
+                            contentDescription = "Stop",
+                            tint = CinnabarRed,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
                 }
             }
 
