@@ -19,16 +19,21 @@ class AlarmSoundPlayer @Inject constructor(
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
 
-    private val audioAttributes = AudioAttributes.Builder()
+    private val alarmAttributes = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_ALARM)
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build()
+
+    private val previewAttributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
         .build()
 
     fun play(sound: AlarmSound, vibrate: Boolean = true) {
         stop()
 
         mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(audioAttributes)
+            setAudioAttributes(alarmAttributes)
             when (sound) {
                 is AlarmSound.Bundled -> {
                     val resId = context.resources.getIdentifier(
@@ -60,28 +65,39 @@ class AlarmSoundPlayer @Inject constructor(
         }
     }
 
-    fun preview(sound: AlarmSound) {
+    fun preview(sound: AlarmSound, onComplete: () -> Unit = {}) {
+        android.util.Log.d("AlarmSoundPlayer", "preview called: ${sound.displayName}")
         stop()
-        mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(audioAttributes)
+        try {
+            val player = MediaPlayer()
+            player.setAudioAttributes(previewAttributes)
             when (sound) {
                 is AlarmSound.Bundled -> {
                     val resId = context.resources.getIdentifier(
                         sound.resName, "raw", context.packageName
                     )
-                    if (resId != 0) {
-                        val afd = context.resources.openRawResourceFd(resId)
-                        setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                        afd.close()
-                    }
+                    if (resId == 0) { player.release(); return }
+                    val afd = context.resources.openRawResourceFd(resId)
+                    player.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                    afd.close()
                 }
                 is AlarmSound.Custom -> {
-                    setDataSource(context, sound.uri)
+                    player.setDataSource(context, sound.uri)
                 }
             }
-            isLooping = false
-            prepare()
-            start()
+            player.isLooping = false
+            player.setOnPreparedListener {
+                android.util.Log.d("AlarmSoundPlayer", "prepared, starting playback")
+                it.start()
+            }
+            player.setOnErrorListener { _, _, _ -> player.release(); mediaPlayer = null; onComplete(); true }
+            player.setOnCompletionListener { it.release(); mediaPlayer = null; onComplete() }
+            player.prepareAsync()
+            mediaPlayer = player
+        } catch (e: Exception) {
+            android.util.Log.e("AlarmSoundPlayer", "preview failed", e)
+            mediaPlayer?.release()
+            mediaPlayer = null
         }
     }
 
@@ -95,6 +111,7 @@ class AlarmSoundPlayer @Inject constructor(
         vibrator = null
     }
 
+    @Suppress("DEPRECATION")
     private fun startVibration() {
         vibrator = (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)
             ?.defaultVibrator

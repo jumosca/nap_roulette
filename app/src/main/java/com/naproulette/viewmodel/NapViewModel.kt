@@ -14,6 +14,7 @@ import com.naproulette.domain.model.TimerState
 import com.naproulette.domain.usecase.CalculateNapStats
 import com.naproulette.domain.usecase.GenerateRandomDuration
 import com.naproulette.domain.usecase.GetNapVerdict
+import com.naproulette.service.AlarmSoundPlayer
 import com.naproulette.service.TimerService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -38,7 +39,8 @@ class NapViewModel @Inject constructor(
     private val calculateNapStats: CalculateNapStats,
     private val getNapVerdict: GetNapVerdict,
     private val repository: NapRepository,
-    private val preferences: PreferencesManager
+    private val preferences: PreferencesManager,
+    private val alarmSoundPlayer: AlarmSoundPlayer
 ) : AndroidViewModel(application) {
 
     // Timer state from service
@@ -70,6 +72,9 @@ class NapViewModel @Inject constructor(
 
     private val _showStats = MutableStateFlow(false)
     val showStats: StateFlow<Boolean> = _showStats.asStateFlow()
+
+    private val _previewingSound = MutableStateFlow<AlarmSound?>(null)
+    val previewingSound: StateFlow<AlarmSound?> = _previewingSound.asStateFlow()
 
     // Nap stats
     val napStats: StateFlow<NapStats> = repository.getAllSessions()
@@ -140,6 +145,17 @@ class NapViewModel @Inject constructor(
         }
     }
 
+    fun previewSound(sound: AlarmSound) {
+        android.util.Log.d("NapViewModel", "previewSound: ${sound.displayName}")
+        _previewingSound.value = sound
+        alarmSoundPlayer.preview(sound, onComplete = { _previewingSound.value = null })
+    }
+
+    fun stopPreview() {
+        alarmSoundPlayer.stop()
+        _previewingSound.value = null
+    }
+
     fun spin() {
         _verdict.value = null
         _timerState.value = TimerState.SPINNING
@@ -157,7 +173,7 @@ class NapViewModel @Inject constructor(
 
             // Start the actual timer
             sessionStartTime = System.currentTimeMillis()
-            TimerService.startTimer(application, duration.inWholeMilliseconds)
+            TimerService.startTimer(application, duration.inWholeMilliseconds, _selectedSound.value)
             _timerState.value = TimerState.COUNTING_DOWN
         }
     }

@@ -34,6 +34,7 @@ class TimerService : Service() {
 
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var countdownJob: Job? = null
+    private var currentAlarmSound: AlarmSound = AlarmSound.default
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -42,6 +43,7 @@ class TimerService : Service() {
             ACTION_START -> {
                 val durationMillis = intent.getLongExtra(EXTRA_DURATION_MILLIS, 0L)
                 if (durationMillis > 0) {
+                    currentAlarmSound = soundFromIntent(intent)
                     startTimer(durationMillis)
                 }
             }
@@ -78,7 +80,19 @@ class TimerService : Service() {
 
     private fun scheduleAlarm(durationMillis: Long) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, AlarmReceiver::class.java)
+        val intent = Intent(this, AlarmReceiver::class.java).apply {
+            when (val s = currentAlarmSound) {
+                is AlarmSound.Bundled -> {
+                    putExtra(EXTRA_SOUND_TYPE, "bundled")
+                    putExtra(EXTRA_SOUND_RES_NAME, s.resName)
+                }
+                is AlarmSound.Custom -> {
+                    putExtra(EXTRA_SOUND_TYPE, "custom")
+                    putExtra(EXTRA_SOUND_URI, s.uri.toString())
+                    putExtra(EXTRA_SOUND_NAME, s.name)
+                }
+            }
+        }
         val pendingIntent = PendingIntent.getBroadcast(
             this, ALARM_REQUEST_CODE, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -135,7 +149,7 @@ class TimerService : Service() {
         _isRunning.value = false
         _remainingMillis.value = 0
         _isAlarmFiring.value = true
-        alarmSoundPlayer.play(AlarmSound.default)
+        alarmSoundPlayer.play(currentAlarmSound)
     }
 
     private fun dismissAlarm() {
@@ -196,6 +210,21 @@ class TimerService : Service() {
         }
     }
 
+    private fun soundFromIntent(intent: Intent): AlarmSound {
+        return when (intent.getStringExtra(EXTRA_SOUND_TYPE)) {
+            "bundled" -> {
+                val resName = intent.getStringExtra(EXTRA_SOUND_RES_NAME) ?: return AlarmSound.default
+                AlarmSound.allBundled.find { it.resName == resName } ?: AlarmSound.default
+            }
+            "custom" -> {
+                val uriStr = intent.getStringExtra(EXTRA_SOUND_URI) ?: return AlarmSound.default
+                val name = intent.getStringExtra(EXTRA_SOUND_NAME) ?: "Custom Sound"
+                AlarmSound.Custom(android.net.Uri.parse(uriStr), name)
+            }
+            else -> AlarmSound.default
+        }
+    }
+
     override fun onDestroy() {
         serviceScope.cancel()
         alarmSoundPlayer.stop()
@@ -209,6 +238,10 @@ class TimerService : Service() {
         const val ACTION_DISMISS = "com.naproulette.action.DISMISS"
         const val ACTION_SNOOZE = "com.naproulette.action.SNOOZE"
         const val EXTRA_DURATION_MILLIS = "duration_millis"
+        const val EXTRA_SOUND_TYPE = "sound_type"
+        const val EXTRA_SOUND_RES_NAME = "sound_res_name"
+        const val EXTRA_SOUND_URI = "sound_uri"
+        const val EXTRA_SOUND_NAME = "sound_name"
 
         private const val TIMER_NOTIFICATION_ID = 1001
         private const val ALARM_REQUEST_CODE = 100
@@ -226,10 +259,21 @@ class TimerService : Service() {
         private val _isAlarmFiring = MutableStateFlow(false)
         val isAlarmFiring: StateFlow<Boolean> = _isAlarmFiring.asStateFlow()
 
-        fun startTimer(context: Context, durationMillis: Long) {
+        fun startTimer(context: Context, durationMillis: Long, sound: AlarmSound = AlarmSound.default) {
             val intent = Intent(context, TimerService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_DURATION_MILLIS, durationMillis)
+                when (sound) {
+                    is AlarmSound.Bundled -> {
+                        putExtra(EXTRA_SOUND_TYPE, "bundled")
+                        putExtra(EXTRA_SOUND_RES_NAME, sound.resName)
+                    }
+                    is AlarmSound.Custom -> {
+                        putExtra(EXTRA_SOUND_TYPE, "custom")
+                        putExtra(EXTRA_SOUND_URI, sound.uri.toString())
+                        putExtra(EXTRA_SOUND_NAME, sound.name)
+                    }
+                }
             }
             context.startForegroundService(intent)
         }

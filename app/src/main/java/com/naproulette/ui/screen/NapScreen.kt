@@ -72,6 +72,7 @@ fun NapScreen(viewModel: NapViewModel) {
     val selectedPreset by viewModel.selectedPreset.collectAsStateWithLifecycle()
     val showStats by viewModel.showStats.collectAsStateWithLifecycle()
     val napStats by viewModel.napStats.collectAsStateWithLifecycle()
+    val previewingSound by viewModel.previewingSound.collectAsStateWithLifecycle()
 
     // Full-screen alarm overlay
     if (timerState == TimerState.ALARM_FIRING) {
@@ -162,28 +163,15 @@ fun NapScreen(viewModel: NapViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Timer display (numbers below roulette)
-            Box(contentAlignment = Alignment.Center) {
-                when (timerState) {
-                    TimerState.IDLE -> {
-                        IdleTimerDisplay(
-                            minMinutes = minMinutes,
-                            maxMinutes = maxMinutes,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
-                    }
-                    TimerState.SPINNING -> {
-                        // SpinButton handles its own spinning animation
-                    }
-                    TimerState.COUNTING_DOWN -> {
-                        val progress = if (totalDurationMillis > 0) {
-                            remainingMillis.toFloat() / totalDurationMillis.toFloat()
-                        } else 0f
+            // Timer display (countdown only)
+            if (timerState == TimerState.COUNTING_DOWN) {
+                Box(contentAlignment = Alignment.Center) {
+                    val progress = if (totalDurationMillis > 0) {
+                        remainingMillis.toFloat() / totalDurationMillis.toFloat()
+                    } else 0f
 
-                        NapProgressArc(progress = progress)
-                        TimerDisplay(remainingMillis = remainingMillis)
-                    }
-                    TimerState.ALARM_FIRING -> { /* handled above */ }
+                    NapProgressArc(progress = progress)
+                    TimerDisplay(remainingMillis = remainingMillis)
                 }
             }
 
@@ -273,8 +261,10 @@ fun NapScreen(viewModel: NapViewModel) {
                     Spacer(modifier = Modifier.height(24.dp))
                     SoundPicker(
                         selectedSound = selectedSound,
+                        previewingSound = previewingSound,
                         onSoundSelected = { viewModel.selectSound(it) },
-                        onPreview = { /* TODO: preview via AlarmSoundPlayer */ },
+                        onPreview = { viewModel.previewSound(it) },
+                        onStopPreview = { viewModel.stopPreview() },
                         onCustomSoundPicked = { uri, name ->
                             viewModel.selectSound(AlarmSound.Custom(uri, name))
                         }

@@ -10,17 +10,24 @@ import androidx.core.app.NotificationManagerCompat
 import com.naproulette.NapRouletteApp
 import com.naproulette.R
 import com.naproulette.ui.screen.AlarmActivity
+import com.naproulette.service.TimerService
 
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("AlarmReceiver", "Alarm fired!")
 
-        // Launch full-screen alarm activity
+        // Launch full-screen alarm activity — forward sound extras from the original alarm intent
         val alarmIntent = Intent(context, AlarmActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_NO_USER_ACTION or
                     Intent.FLAG_ACTIVITY_CLEAR_TASK
+            intent.getStringExtra(TimerService.EXTRA_SOUND_TYPE)?.let {
+                putExtra(TimerService.EXTRA_SOUND_TYPE, it)
+                putExtra(TimerService.EXTRA_SOUND_RES_NAME, intent.getStringExtra(TimerService.EXTRA_SOUND_RES_NAME))
+                putExtra(TimerService.EXTRA_SOUND_URI, intent.getStringExtra(TimerService.EXTRA_SOUND_URI))
+                putExtra(TimerService.EXTRA_SOUND_NAME, intent.getStringExtra(TimerService.EXTRA_SOUND_NAME))
+            }
         }
 
         val fullScreenPendingIntent = PendingIntent.getActivity(

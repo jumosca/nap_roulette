@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.naproulette.ui.theme.CinnabarRed
 import com.naproulette.ui.theme.CinnabarRedDark
+import androidx.compose.ui.text.font.FontWeight
 import com.naproulette.ui.theme.InkBlack
 import com.naproulette.ui.theme.InkFaint
 import com.naproulette.ui.theme.InkLight
@@ -44,12 +45,16 @@ fun RangeSelector(
         ) {
             Text(
                 text = "${sliderValues.start.toInt()} min",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
                 color = InkBlack
             )
             Text(
                 text = "${sliderValues.endInclusive.toInt()} min",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
                 color = InkBlack
             )
         }
