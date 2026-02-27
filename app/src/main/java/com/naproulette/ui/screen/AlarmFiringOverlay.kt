@@ -1,13 +1,7 @@
 package com.naproulette.ui.screen
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import android.os.Build
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,19 +23,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.request.ImageRequest
+import com.naproulette.R
 import com.naproulette.ui.components.GrainOverlay
 import com.naproulette.ui.theme.CinnabarRed
 import com.naproulette.ui.theme.InkBlack
 import com.naproulette.ui.theme.InkMedium
 import com.naproulette.ui.theme.VintagePaper
+import com.naproulette.ui.theme.VintageSerif
 
 @Composable
 fun AlarmFiringOverlay(
@@ -50,16 +49,16 @@ fun AlarmFiringOverlay(
     onSnooze: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val transition = rememberInfiniteTransition(label = "alarm")
-    val scale by transition.animateFloat(
-        initialValue = 0.9f,
-        targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "alarm_scale"
-    )
+    val context = LocalContext.current
+    val imageLoader = ImageLoader.Builder(context)
+        .components {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                add(ImageDecoderDecoder.Factory())
+            } else {
+                add(GifDecoder.Factory())
+            }
+        }
+        .build()
 
     Box(
         modifier = modifier
@@ -74,13 +73,13 @@ fun AlarmFiringOverlay(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(32.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Alarm,
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(R.drawable.alarm_view)
+                    .build(),
+                imageLoader = imageLoader,
                 contentDescription = "Alarm",
-                tint = CinnabarRed,
-                modifier = Modifier
-                    .size(80.dp)
-                    .scale(scale)
+                modifier = Modifier.size(280.dp)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -88,6 +87,7 @@ fun AlarmFiringOverlay(
             Text(
                 text = "WAKE UP",
                 style = MaterialTheme.typography.displayMedium.copy(
+                    fontFamily = VintageSerif,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 4.sp,
                     color = InkBlack
@@ -98,7 +98,9 @@ fun AlarmFiringOverlay(
 
             Text(
                 text = "Your nap is over",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = VintageSerif
+                ),
                 color = InkMedium,
                 textAlign = TextAlign.Center
             )
@@ -110,7 +112,7 @@ fun AlarmFiringOverlay(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = CinnabarRed
                 ),
-                shape = RoundedCornerShape(2.dp),
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -129,7 +131,7 @@ fun AlarmFiringOverlay(
 
             OutlinedButton(
                 onClick = onSnooze,
-                shape = RoundedCornerShape(2.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = InkBlack
                 ),

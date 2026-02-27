@@ -25,3 +25,6 @@ val CinnabarRedFaint = Color(0x33A63D2F)
 // Utility
 val VintageGold = Color(0xFFB8963E)
 val VintageBorder = Color(0xFF3D3833)
+
+// Roulette baize — faded vintage casino green
+val RouletteGreen = Color(0xFF3D5C47)

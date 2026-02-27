@@ -1,6 +1,10 @@
 package com.naproulette.ui.screen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,7 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,6 +39,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,6 +61,7 @@ import com.naproulette.ui.theme.InkDark
 import com.naproulette.ui.theme.InkLight
 import com.naproulette.ui.theme.InkMedium
 import com.naproulette.ui.theme.VintageCard
+import com.naproulette.ui.theme.RouletteGreen
 import com.naproulette.ui.theme.VintageGold
 import com.naproulette.ui.theme.VintagePaper
 import com.naproulette.ui.theme.VintagePaperDark
@@ -99,102 +106,139 @@ fun NapScreen(viewModel: NapViewModel) {
                     indication = null
                 ) { viewModel.clearPreset() }
                 .verticalScroll(rememberScrollState())
-                .padding(top = 48.dp, bottom = 24.dp),
+                .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header (only when idle)
-            AnimatedVisibility(
-                visible = timerState == TimerState.IDLE,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+            // Green baize background — header + roulette + subtitle
+            val greenPadding by animateDpAsState(
+                targetValue = if (timerState == TimerState.SPINNING) 96.dp else 24.dp,
+                label = "green_padding"
+            )
+            val greenBackground by animateColorAsState(
+                targetValue = if (timerState == TimerState.COUNTING_DOWN) Color.Transparent else RouletteGreen,
+                label = "green_background"
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(greenBackground),
+                contentAlignment = Alignment.Center
             ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Header (only when idle)
+                    AnimatedVisibility(
+                        visible = timerState == TimerState.IDLE,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
                     ) {
-                        Text(
-                            text = "NAP ROULETTE",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                letterSpacing = 3.sp
-                            )
-                        )
-                        IconButton(onClick = { viewModel.toggleStats() }) {
-                            Icon(
-                                imageVector = Icons.Default.BarChart,
-                                contentDescription = "Stats",
-                                tint = InkMedium
-                            )
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Spacer(modifier = Modifier.height(48.dp))
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 24.dp)
+                                    .fillMaxWidth()
+                                    .border(1.dp, VintagePaper.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                            ) {
+                                Text(
+                                    text = "NAP ROULETTE",
+                                    style = MaterialTheme.typography.headlineLarge.copy(
+                                        letterSpacing = 3.sp,
+                                        color = VintagePaper
+                                    )
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
 
-                    // Ink divider
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                        thickness = 1.dp,
-                        color = InkBlack.copy(alpha = 0.3f)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(
-                if (timerState == TimerState.IDLE) 16.dp else 80.dp
-            ))
-
-            // Roulette / Spin button
-            when (timerState) {
-                TimerState.IDLE -> {
-                    SpinButton(
-                        isSpinning = false,
-                        onClick = {
-                            viewModel.clearVerdict()
-                            viewModel.spin()
-                        }
-                    )
-                }
-                TimerState.SPINNING -> {
-                    SpinButton(isSpinning = true, onClick = {})
-                }
-                else -> {}
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Timer display (countdown only)
-            if (timerState == TimerState.COUNTING_DOWN) {
-                Box(contentAlignment = Alignment.Center) {
-                    val progress = if (totalDurationMillis > 0) {
-                        remainingMillis.toFloat() / totalDurationMillis.toFloat()
-                    } else 0f
-
-                    NapProgressArc(progress = progress)
-                    TimerDisplay(remainingMillis = remainingMillis)
-                }
-            }
-
-            // Stop button (below timer during countdown)
-            AnimatedVisibility(
-                visible = timerState == TimerState.COUNTING_DOWN,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    IconButton(
-                        onClick = { viewModel.stop() },
-                        modifier = Modifier
-                            .size(72.dp)
-                            .border(2.dp, CinnabarRed, RoundedCornerShape(50))
-                            .background(CinnabarRedFaint, RoundedCornerShape(50))
+                    // Roulette / timer
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(vertical = greenPadding)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Stop,
-                            contentDescription = "Stop",
-                            tint = CinnabarRed,
-                            modifier = Modifier.size(36.dp)
+                        Spacer(modifier = Modifier.height(
+                            if (timerState == TimerState.COUNTING_DOWN) 56.dp else 0.dp
+                        ))
+
+                        // Roulette / Spin button
+                        when (timerState) {
+                            TimerState.IDLE -> {
+                                SpinButton(
+                                    isSpinning = false,
+                                    onClick = {
+                                        viewModel.clearVerdict()
+                                        viewModel.spin()
+                                    }
+                                )
+                            }
+                            TimerState.SPINNING -> {
+                                SpinButton(isSpinning = true, onClick = {})
+                            }
+                            else -> {}
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Timer display (countdown only)
+                        if (timerState == TimerState.COUNTING_DOWN) {
+                            Box(contentAlignment = Alignment.Center) {
+                                val progress = if (totalDurationMillis > 0) {
+                                    remainingMillis.toFloat() / totalDurationMillis.toFloat()
+                                } else 0f
+
+                                NapProgressArc(progress = progress)
+                                TimerDisplay(remainingMillis = remainingMillis)
+                            }
+                        }
+
+                        // Stop button (below timer during countdown)
+                        AnimatedVisibility(
+                            visible = timerState == TimerState.COUNTING_DOWN,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                IconButton(
+                                    onClick = { viewModel.stop() },
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .border(2.dp, CinnabarRed, RoundedCornerShape(50))
+                                        .background(CinnabarRedFaint, RoundedCornerShape(50))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Stop,
+                                        contentDescription = "Stop",
+                                        tint = CinnabarRed,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Subtitle bottom-right (only when idle)
+                    AnimatedVisibility(
+                        visible = timerState == TimerState.IDLE,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Text(
+                            text = "Today is Your Lucky Day!",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = FontFamily.Cursive,
+                                fontStyle = FontStyle.Italic,
+                                fontSize = 18.sp,
+                                color = VintagePaper
+                            ),
+                            textAlign = TextAlign.End,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 24.dp, bottom = 20.dp)
                         )
                     }
                 }
@@ -203,7 +247,7 @@ fun NapScreen(viewModel: NapViewModel) {
             // Range slider (below numbers)
             AnimatedVisibility(visible = timerState == TimerState.IDLE) {
                 Column {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
                     RangeSelector(
                         minMinutes = minMinutes,
                         maxMinutes = maxMinutes,
@@ -272,36 +316,61 @@ fun NapScreen(viewModel: NapViewModel) {
                 }
             }
 
-            // Stats panel
-            AnimatedVisibility(
-                visible = showStats,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Box(
+            // Stats section (only when idle)
+            AnimatedVisibility(visible = timerState == TimerState.IDLE) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
-                        .border(1.dp, InkBlack.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
-                        .background(VintageCard)
-                        .padding(20.dp)
+                        .padding(horizontal = 24.dp)
                 ) {
-                    Column {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Collapsible header
+                    val statsChevron by animateFloatAsState(
+                        targetValue = if (showStats) 180f else 0f,
+                        label = "stats_chevron"
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { viewModel.toggleStats() }
+                            .padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
                             text = "NAP STATISTICS",
                             style = MaterialTheme.typography.labelLarge.copy(
                                 letterSpacing = 3.sp
                             )
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        HorizontalDivider(thickness = 1.dp, color = InkBlack.copy(alpha = 0.2f))
-                        Spacer(modifier = Modifier.height(12.dp))
-                        StatRow("Total Naps", "${napStats.totalNaps}")
-                        StatRow("Completed", "${napStats.completedNaps}")
-                        StatRow("Avg Duration", formatDuration(napStats.averageDuration.inWholeMilliseconds))
-                        StatRow("Total Time", formatDuration(napStats.totalNapTime.inWholeMilliseconds))
-                        StatRow("Longest", formatDuration(napStats.longestNap.inWholeMilliseconds))
-                        StatRow("Streak", "${napStats.currentStreak} naps")
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (showStats) "Collapse" else "Expand",
+                            tint = InkMedium,
+                            modifier = Modifier.rotate(statsChevron)
+                        )
+                    }
+
+                    // Expandable content
+                    AnimatedVisibility(
+                        visible = showStats,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column {
+                            HorizontalDivider(thickness = 1.dp, color = InkBlack.copy(alpha = 0.2f))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            StatRow("Total Naps", "${napStats.totalNaps}")
+                            StatRow("Completed", "${napStats.completedNaps}")
+                            StatRow("Avg Duration", formatDuration(napStats.averageDuration.inWholeMilliseconds))
+                            StatRow("Total Time", formatDuration(napStats.totalNapTime.inWholeMilliseconds))
+                            StatRow("Longest", formatDuration(napStats.longestNap.inWholeMilliseconds))
+                            StatRow("Streak", "${napStats.currentStreak} naps")
+                        }
                     }
                 }
             }

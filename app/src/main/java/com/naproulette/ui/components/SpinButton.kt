@@ -73,14 +73,14 @@ fun SpinButton(
     val currentRotation = if (isSpinning) spinRotation else 0f
 
     Image(
-        painter = painterResource(id = R.drawable.roulette_spin),
+        painter = painterResource(id = if (isSpinning) R.drawable.roulette_spin else R.drawable.roulette_homepage),
         contentDescription = if (isSpinning) "Spinning..." else "Spin the roulette",
         contentScale = ContentScale.Fit,
         modifier = modifier
             .size(200.dp)
             .scale(currentScale)
             .rotate(currentRotation)
-            .clip(CircleShape)
+            .then(if (isSpinning) Modifier.clip(CircleShape) else Modifier)
             .clickable(enabled = !isSpinning) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onClick()

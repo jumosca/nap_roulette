@@ -87,6 +87,10 @@ dependencies {
     // Media
     implementation(libs.media)
 
+    // Coil (image loading + GIF)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.gif)
+
     // Coroutines
     implementation(libs.coroutines.android)
 
