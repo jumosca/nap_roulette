@@ -30,24 +30,31 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.Canvas
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import com.naproulette.R
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.naproulette.domain.model.AlarmSound
 import com.naproulette.domain.model.NapPreset
 import com.naproulette.domain.model.TimerState
@@ -67,6 +74,8 @@ import com.naproulette.ui.theme.VintageGold
 import com.naproulette.ui.theme.VintagePaper
 import com.naproulette.ui.theme.VintagePaperDark
 import com.naproulette.viewmodel.NapViewModel
+
+private val grandCasinoFamily = FontFamily(Font(R.font.grand_casino_demo))
 
 @Composable
 fun NapScreen(viewModel: NapViewModel) {
@@ -91,6 +100,14 @@ fun NapScreen(viewModel: NapViewModel) {
         return
     }
 
+    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(showStats) {
+        if (showStats) {
+            scrollState.animateScrollTo(Int.MAX_VALUE)
+        }
+    }
+
     val screenBackground by animateColorAsState(
         targetValue = if (timerState == TimerState.SPINNING) RouletteGreen else VintagePaper,
         label = "screen_background"
@@ -110,7 +127,7 @@ fun NapScreen(viewModel: NapViewModel) {
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) { viewModel.clearPreset() }
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -143,16 +160,19 @@ fun NapScreen(viewModel: NapViewModel) {
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Spacer(modifier = Modifier.height(16.dp))
-                            HorizontalDivider(thickness = 1.dp, color = VintagePaper.copy(alpha = 0.5f))
+                            OrnamentalDivider()
                             Text(
                                 text = "NAP ROULETTE",
                                 style = MaterialTheme.typography.headlineLarge.copy(
                                     letterSpacing = 3.sp,
                                     color = VintagePaper
                                 ),
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp)
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 10.dp)
                             )
-                            HorizontalDivider(thickness = 1.dp, color = VintagePaper.copy(alpha = 0.5f))
+                            OrnamentalDivider()
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
@@ -250,6 +270,28 @@ fun NapScreen(viewModel: NapViewModel) {
             AnimatedVisibility(visible = timerState == TimerState.IDLE) {
                 Column {
                     Spacer(modifier = Modifier.height(28.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "SET YOUR NAP WINDOW",
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                letterSpacing = 3.sp
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Spin for a random duration within this range",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontStyle = FontStyle.Italic,
+                                color = InkMedium
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                     RangeSelector(
                         minMinutes = minMinutes,
                         maxMinutes = maxMinutes,
@@ -313,6 +355,9 @@ fun NapScreen(viewModel: NapViewModel) {
                         onStopPreview = { viewModel.stopPreview() },
                         onCustomSoundPicked = { uri, name ->
                             viewModel.selectSound(AlarmSound.Custom(uri, name))
+                        },
+                        onExpanded = {
+                            scope.launch { scrollState.animateScrollTo(Int.MAX_VALUE) }
                         }
                     )
                 }
@@ -357,21 +402,34 @@ fun NapScreen(viewModel: NapViewModel) {
                         )
                     }
 
-                    // Expandable content
+                    // Expandable content — slot machine display
                     AnimatedVisibility(
                         visible = showStats,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
-                        Column {
-                            HorizontalDivider(thickness = 1.dp, color = InkBlack.copy(alpha = 0.2f))
-                            Spacer(modifier = Modifier.height(12.dp))
-                            StatRow("Total Naps", "${napStats.totalNaps}")
-                            StatRow("Completed", "${napStats.completedNaps}")
-                            StatRow("Avg Duration", formatDuration(napStats.averageDuration.inWholeMilliseconds))
-                            StatRow("Total Time", formatDuration(napStats.totalNapTime.inWholeMilliseconds))
-                            StatRow("Longest", formatDuration(napStats.longestNap.inWholeMilliseconds))
-                            StatRow("Streak", "${napStats.currentStreak} naps")
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                                .border(1.dp, VintageGold.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                                .background(InkBlack, RoundedCornerShape(4.dp))
+                        ) {
+                            Column {
+                                val stats = listOf(
+                                    "TOTAL NAPS" to "${napStats.totalNaps}",
+                                    "COMPLETED" to "${napStats.completedNaps}",
+                                    "AVG DURATION" to formatDuration(napStats.averageDuration.inWholeMilliseconds),
+                                    "TOTAL TIME" to formatDuration(napStats.totalNapTime.inWholeMilliseconds),
+                                    "LONGEST" to formatDuration(napStats.longestNap.inWholeMilliseconds)
+                                )
+                                stats.forEachIndexed { index, (label, value) ->
+                                    StatRow(label, value)
+                                    if (index < stats.lastIndex) {
+                                        StatDotDivider()
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -381,18 +439,89 @@ fun NapScreen(viewModel: NapViewModel) {
 }
 
 @Composable
+private fun OrnamentalDivider() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(VintagePaper.copy(alpha = 0.5f))
+        )
+        Text(
+            text = " ◆ ",
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 10.sp,
+                color = VintagePaper.copy(alpha = 0.7f)
+            )
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(VintagePaper.copy(alpha = 0.5f))
+        )
+    }
+}
+
+@Composable
+private fun StatDotDivider() {
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(14.dp)
+    ) {
+        val dotRadius = 1.8.dp.toPx()
+        val spacing = 10.dp.toPx()
+        val count = (size.width / spacing).toInt()
+        val startX = (size.width - (count - 1) * spacing) / 2f
+        val cy = size.height / 2f
+        repeat(count) { i ->
+            drawCircle(
+                color = androidx.compose.ui.graphics.Color(0xFFB8960C).copy(alpha = 0.45f),
+                radius = dotRadius,
+                center = androidx.compose.ui.geometry.Offset(startX + i * spacing, cy)
+            )
+        }
+    }
+}
+
+@Composable
 private fun StatRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, style = MaterialTheme.typography.bodyLarge, color = InkMedium)
-        Text(text = value, style = MaterialTheme.typography.bodyLarge.copy(
-            fontWeight = FontWeight.SemiBold,
-            color = InkBlack
-        ))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontFamily = grandCasinoFamily,
+                letterSpacing = 1.sp,
+                color = CinnabarRed.copy(alpha = 0.9f)
+            )
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontFamily = grandCasinoFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                letterSpacing = 2.sp,
+                color = VintageGold,
+                shadow = Shadow(
+                    color = VintageGold.copy(alpha = 0.7f),
+                    offset = Offset(0f, 0f),
+                    blurRadius = 10f
+                )
+            )
+        )
     }
 }
 

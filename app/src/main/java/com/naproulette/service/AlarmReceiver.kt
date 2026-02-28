@@ -16,6 +16,9 @@ class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("AlarmReceiver", "Alarm fired!")
+        // goAsync() keeps the receiver process alive past onReceive() return,
+        // giving time for the activity and notification to fully launch.
+        val result = goAsync()
 
         // Launch full-screen alarm activity — forward sound extras from the original alarm intent
         val alarmIntent = Intent(context, AlarmActivity::class.java).apply {
@@ -63,6 +66,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         // Start the alarm activity directly as well
         context.startActivity(alarmIntent)
+        result.finish()
     }
 
     companion object {

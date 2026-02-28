@@ -7,7 +7,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.naproulette.MainActivity
@@ -98,13 +97,14 @@ class TimerService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val triggerAt = SystemClock.elapsedRealtime() + durationMillis
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            triggerAt,
+        // setAlarmClock fires reliably even in Doze mode — same priority as the system clock app.
+        // Uses RTC (wall-clock time), never deferred by battery optimization.
+        val triggerAt = System.currentTimeMillis() + durationMillis
+        alarmManager.setAlarmClock(
+            AlarmManager.AlarmClockInfo(triggerAt, null),
             pendingIntent
         )
-        Log.d("TimerService", "Alarm scheduled for ${durationMillis / 1000}s from now")
+        Log.d("TimerService", "Alarm clock scheduled for ${durationMillis / 1000}s from now")
     }
 
     private fun cancelAlarm() {

@@ -60,6 +60,7 @@ fun SoundPicker(
     onPreview: (AlarmSound) -> Unit,
     onStopPreview: () -> Unit,
     onCustomSoundPicked: (Uri, String) -> Unit,
+    onExpanded: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -89,7 +90,10 @@ fun SoundPicker(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable {
+                    expanded = !expanded
+                    if (expanded) onExpanded()
+                }
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
