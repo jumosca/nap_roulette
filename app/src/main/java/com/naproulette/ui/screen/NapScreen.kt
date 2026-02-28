@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -90,10 +91,14 @@ fun NapScreen(viewModel: NapViewModel) {
         return
     }
 
+    val screenBackground by animateColorAsState(
+        targetValue = if (timerState == TimerState.SPINNING) RouletteGreen else VintagePaper,
+        label = "screen_background"
+    )
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(VintagePaper)
+            .background(screenBackground)
     ) {
         // Grain texture overlay
         GrainOverlay()
@@ -125,7 +130,9 @@ fun NapScreen(viewModel: NapViewModel) {
                 contentAlignment = Alignment.Center
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Header (only when idle)
@@ -135,22 +142,17 @@ fun NapScreen(viewModel: NapViewModel) {
                         exit = fadeOut() + shrinkVertically()
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            Spacer(modifier = Modifier.height(48.dp))
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 24.dp)
-                                    .fillMaxWidth()
-                                    .border(1.dp, VintagePaper.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 16.dp, vertical = 10.dp)
-                            ) {
-                                Text(
-                                    text = "NAP ROULETTE",
-                                    style = MaterialTheme.typography.headlineLarge.copy(
-                                        letterSpacing = 3.sp,
-                                        color = VintagePaper
-                                    )
-                                )
-                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider(thickness = 1.dp, color = VintagePaper.copy(alpha = 0.5f))
+                            Text(
+                                text = "NAP ROULETTE",
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    letterSpacing = 3.sp,
+                                    color = VintagePaper
+                                ),
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp)
+                            )
+                            HorizontalDivider(thickness = 1.dp, color = VintagePaper.copy(alpha = 0.5f))
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
@@ -221,9 +223,9 @@ fun NapScreen(viewModel: NapViewModel) {
                         }
                     }
 
-                    // Subtitle bottom-right (only when idle)
+                    // Subtitle (only when spinning)
                     AnimatedVisibility(
-                        visible = timerState == TimerState.IDLE,
+                        visible = timerState == TimerState.SPINNING,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
@@ -232,13 +234,13 @@ fun NapScreen(viewModel: NapViewModel) {
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontFamily = FontFamily.Cursive,
                                 fontStyle = FontStyle.Italic,
-                                fontSize = 18.sp,
+                                fontSize = 28.sp,
                                 color = VintagePaper
                             ),
-                            textAlign = TextAlign.End,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(end = 24.dp, bottom = 20.dp)
+                                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
                         )
                     }
                 }

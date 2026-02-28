@@ -12,7 +12,7 @@ enum class NapPreset(
     POWER_NAP(
         displayName = "Power Nap",
         description = "Quick recharge",
-        range = TimeRange(min = 10.minutes, max = 20.minutes),
+        range = TimeRange(min = 5.minutes, max = 15.minutes),
         suit = "♦",
         isRedSuit = true
     ),

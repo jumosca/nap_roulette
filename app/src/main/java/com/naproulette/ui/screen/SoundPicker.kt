@@ -140,34 +140,37 @@ fun SoundPicker(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Custom upload button
+                val isCustomSelected = selectedSound is AlarmSound.Custom
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp, vertical = 4.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .border(1.dp, InkBlack.copy(alpha = 0.15f), RoundedCornerShape(2.dp))
-                        .background(VintageCard)
-                        .clickable {
-                            audioPickerLauncher.launch(arrayOf("audio/*"))
-                        }
+                        .border(
+                            1.dp,
+                            if (isCustomSelected) CinnabarRed.copy(alpha = 0.4f) else InkBlack.copy(alpha = 0.15f),
+                            RoundedCornerShape(2.dp)
+                        )
+                        .background(if (isCustomSelected) CinnabarRedFaint else VintageCard)
+                        .clickable { audioPickerLauncher.launch(arrayOf("audio/*")) }
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Upload,
+                        imageVector = if (isCustomSelected) Icons.Default.Check else Icons.Default.Upload,
                         contentDescription = "Upload custom sound",
-                        tint = InkMedium,
+                        tint = if (isCustomSelected) CinnabarRed else InkMedium,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = if (selectedSound is AlarmSound.Custom) {
-                            "Custom: ${selectedSound.displayName}"
+                        text = if (isCustomSelected) {
+                            (selectedSound as AlarmSound.Custom).displayName
                         } else {
                             "Upload custom sound"
                         },
                         style = MaterialTheme.typography.bodyLarge,
-                        color = InkMedium
+                        color = if (isCustomSelected) CinnabarRed else InkMedium
                     )
                 }
             }
