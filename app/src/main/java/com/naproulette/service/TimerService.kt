@@ -51,6 +51,9 @@ class TimerService : Service() {
                 stopSelf()
             }
             ACTION_ALARM_FIRED -> {
+                // Restore sound from extras in case the process was killed since the timer started
+                val sound = soundFromIntent(intent)
+                if (sound != AlarmSound.default) currentAlarmSound = sound
                 handleAlarmFired()
             }
             ACTION_DISMISS -> {
@@ -150,6 +153,34 @@ class TimerService : Service() {
         _remainingMillis.value = 0
         _isAlarmFiring.value = true
         alarmSoundPlayer.play(currentAlarmSound)
+        startForeground(TIMER_NOTIFICATION_ID, buildAlarmNotification())
+    }
+
+    private fun buildAlarmNotification(): android.app.Notification {
+        val alarmActivityIntent = android.content.Intent(this, com.naproulette.ui.screen.AlarmActivity::class.java).apply {
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                    android.content.Intent.FLAG_ACTIVITY_NO_USER_ACTION
+        }
+        val fullScreenIntent = PendingIntent.getActivity(
+            this, 0, alarmActivityIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val dismissIntent = Intent(this, AlarmDismissReceiver::class.java)
+        val dismissPendingIntent = PendingIntent.getBroadcast(
+            this, 1, dismissIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, NapRouletteApp.ALARM_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_alarm)
+            .setContentTitle("Wake up!")
+            .setContentText("Your nap is over!")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setFullScreenIntent(fullScreenIntent, true)
+            .addAction(R.drawable.ic_alarm, "Dismiss", dismissPendingIntent)
+            .setOngoing(true)
+            .setSilent(true)
+            .build()
     }
 
     private fun dismissAlarm() {

@@ -93,6 +93,19 @@ class NapViewModel @Inject constructor(
         viewModelScope.launch {
             _minMinutes.value = preferences.minMinutes.first()
             _maxMinutes.value = preferences.maxMinutes.first()
+
+            val soundType = preferences.alarmSoundType.first()
+            val soundId = preferences.alarmSoundId.first()
+            _selectedSound.value = when (soundType) {
+                "bundled" -> AlarmSound.allBundled.find { it.resName == soundId } ?: AlarmSound.default
+                "custom" -> {
+                    val uriStr = preferences.customSoundUri.first()
+                    val name = preferences.customSoundName.first() ?: "Custom Sound"
+                    if (uriStr != null) AlarmSound.Custom(android.net.Uri.parse(uriStr), name)
+                    else AlarmSound.default
+                }
+                else -> AlarmSound.default
+            }
         }
     }
 

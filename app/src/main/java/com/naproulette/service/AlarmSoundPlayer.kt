@@ -32,37 +32,45 @@ class AlarmSoundPlayer @Inject constructor(
     fun play(sound: AlarmSound, vibrate: Boolean = true) {
         stop()
 
-        mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(alarmAttributes)
-            when (sound) {
-                is AlarmSound.Bundled -> {
-                    val resId = context.resources.getIdentifier(
-                        sound.resName, "raw", context.packageName
-                    )
-                    if (resId != 0) {
-                        val afd = context.resources.openRawResourceFd(resId)
-                        setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                        afd.close()
-                    } else {
-                        // Fallback: use default notification sound
-                        setDataSource(
-                            context,
-                            android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
+        try {
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(alarmAttributes)
+                when (sound) {
+                    is AlarmSound.Bundled -> {
+                        val resId = context.resources.getIdentifier(
+                            sound.resName, "raw", context.packageName
                         )
+                        if (resId != 0) {
+                            val afd = context.resources.openRawResourceFd(resId)
+                            setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                            afd.close()
+                        } else {
+                            setDataSource(
+                                context,
+                                android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
+                            )
+                        }
+                    }
+                    is AlarmSound.Custom -> {
+                        setDataSource(context, sound.uri)
                     }
                 }
-                is AlarmSound.Custom -> {
-                    setDataSource(context, sound.uri)
-                }
+                isLooping = true
+                prepare()
+                start()
             }
-            isLooping = true
-            prepare()
-            start()
+        } catch (e: Exception) {
+            android.util.Log.e("AlarmSoundPlayer", "Failed to play ${sound.displayName}", e)
+            mediaPlayer?.release()
+            mediaPlayer = null
+            // Fall back to the default bundled sound so the alarm always fires audibly
+            if (sound != AlarmSound.default) {
+                play(AlarmSound.default, vibrate = false)
+                return
+            }
         }
 
-        if (vibrate) {
-            startVibration()
-        }
+        if (vibrate) startVibration()
     }
 
     fun preview(sound: AlarmSound, onComplete: () -> Unit = {}) {
