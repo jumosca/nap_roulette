@@ -2,7 +2,7 @@
 
 A casino-themed Android nap timer. Set a time range, spin the roulette wheel, and let fate decide your nap length. Alarm fires when time's up — even from the background.
 
-![Roulette Homepage](spin_me.png)
+<img src="screenshot4.jpeg" width=20% height=20%> <img src="screenshot3.jpeg" width=20% height=20%> <img src="screenshot2.jpeg" width=20% height=20%> <img src="screenshot1.jpeg" width=20% height=20%>
 
 ---
 
