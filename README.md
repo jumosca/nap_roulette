@@ -68,7 +68,7 @@ IDLE → SPINNING (2s animation) → COUNTING_DOWN → ALARM_FIRING → IDLE
 
 ## Status
 
-Currently on Google Play Console closed test, soon available on Play Store.
+Available on [Android Play Store](https://play.google.com/store/apps/details?id=com.naproulette.app) .
 
 ---
 
